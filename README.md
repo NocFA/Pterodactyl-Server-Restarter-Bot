@@ -12,6 +12,7 @@ The user then has 3 buttons, `restart now` which immediately restarts the server
 Upon a user selecting one of these options, it's logged to a file called `bot_activity.log` and prints to the chat what's been selected.
 
 If left untouched, it will just restart the server.
+![alt text](https://noc.wf/PPpCpoxkh0-XjkUCVdTz8.png?no_redirect=true)
 
 Has the ability of using slash commands to run `/postpone` early to extend it by 5 or 15 minutes, just in case you have 30 mnutes remaining and want a bit more time, ahead of time.
 
