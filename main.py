@@ -42,6 +42,7 @@ async def restart_pterodactyl_server():
                 print("Server restart command sent successfully.")
                 now = datetime.now()
                 next_restart_time = now + restart_interval
+                update_presence.restart()
                 print(f"Next restart time has been reset to {next_restart_time}.")
                 channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
                 channel = bot.get_channel(channel_id)
@@ -57,17 +58,17 @@ async def on_ready():
 class RestartControlView(View):
     def __init__(self, *, timeout=None):
         super().__init__(timeout=timeout)
-        
-        async def disable_buttons(self):
-            for item in self.children:
-                if isinstance(item, Button):
-                    item.disabled = True        
 
-    @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
+    async def disable_buttons(self):
+        for item in self.children:
+            if isinstance(item, Button):
+                item.disabled = True
+        self.stop()     
+
     async def restart_now(self, button: Button, interaction: Interaction):
         await restart_pterodactyl_server()
-        button.disabled = True
-        await interaction.response.edit_message(content="Restarting the Palworld server now...", view=self)
+        await self.disable_buttons()
+        await interaction.response.edit_message(view=self)
         
     @nextcord.ui.button(label="Postpone Short (5 mins)", style=ButtonStyle.blurple)
     async def postpone_short(self, button: Button, interaction: Interaction):
