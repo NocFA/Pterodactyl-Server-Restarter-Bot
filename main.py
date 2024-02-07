@@ -114,7 +114,7 @@ async def send_restart_notification():
         channel = bot.get_channel(channel_id)
 
         embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} minutes!", color=0x3498db)
-        embed.add_field(name="Action", value="You can postpone the restart using the buttons below.", inline=False)
+        embed.add_field(name="Action", value="You can postpone the restart, or, restart the server now using the buttons below.", inline=False)
         
         if last_notification_message:
             await last_notification_message.edit(embed=embed, view=RestartControlView(timeout=180))
