@@ -3,6 +3,18 @@
 I set this up for me and my friend's palworld server due to the horrid memory leak.
 Do not expect support/updates, provided as-is.
 
+# What do it do?
+Very simple bot that has a set interval `restart_interval` which by default is 12 hours.
+It counts down from this time and displays such a countdown in its rich presence status, updated every 5 seconds, any lower and you risk discord API hitching.
+
+Once it reaches a predefined amount of time (15 minutes, 5 minutes & 60 seconds) it will send a Discord embed notifying a specified role (.env) that the server is restarting in `x`
+The user then has 3 buttons, `restart now` which immediately restarts the server ID defined in the `.env` `Postpone Short (5 mins)` & `Postpone Long (15 mins)`
+Upon a user selecting one of these options, it's logged to a file called `bot_activity.log` and prints to the chat what's been selected.
+
+If left untouched, it will just restart the server.
+
+Has the ability of using slash commands to run `/postpone` early to extend it by 5 or 15 minutes, just in case you have 30 mnutes remaining and want a bit more time, ahead of time.
+
 # How to use?
 
 These instructions aren't final, nor will work on everyone's system, things will differ.
