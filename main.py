@@ -24,7 +24,7 @@ def calculate_time_until_restart():
             next_restart_time += restart_interval
     return next_restart_time - now
 
-async def restart_pterodactyl_server(initiated_by: str):
+async def restart_pterodactyl_server(initiated_by: str = "Automatic"):
     global next_restart_time
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
@@ -55,7 +55,7 @@ async def restart_pterodactyl_server(initiated_by: str):
                     response_text = await response.text()
                     print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
     except Exception as e:
-        print(f"An error occurred: {e}")
+        logging.error(f"An error occurred during restart attempt by {initiated_by}: {e}")
 
 @bot.event
 async def on_ready():
@@ -110,10 +110,11 @@ async def send_restart_notification():
     notification_times = [15 * 60, 5 * 60, 60]
     if any(time - 60 < total_seconds <= time for time in notification_times):
         minutes = next(time for time in notification_times if time - 60 < total_seconds <= time) // 60
+        minutes_str = "minute" if minutes == 1 else "minutes"  # Handle singular/plural
         channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
         channel = bot.get_channel(channel_id)
 
-        embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} minutes!", color=0x3498db)
+        embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} {minutes_str}!", color=0x3498db)
         embed.add_field(name="Action", value="You can postpone the restart, or, restart the server now using the buttons below.", inline=False)
         
         if last_notification_message:
@@ -121,9 +122,11 @@ async def send_restart_notification():
         else:
             last_notification_message = await channel.send(embed=embed, view=RestartControlView(timeout=180))
     elif total_seconds <= 0:
-        await restart_pterodactyl_server()
+        await restart_pterodactyl_server("System")
         if last_notification_message:
-            await last_notification_message.edit(content="🔄 Palworld server is restarting now...", embed=None, view=None)
+            view = RestartControlView(timeout=180)
+            await view.disable_buttons()
+            await last_notification_message.edit(content="🔄 Palworld server is restarting now...", embed=None, view=view)
             last_notification_message = None
 
 @tasks.loop(seconds=10)
