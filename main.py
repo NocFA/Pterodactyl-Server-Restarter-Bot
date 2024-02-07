@@ -23,7 +23,7 @@ def calculate_time_until_restart():
             next_restart_time += restart_interval
     return next_restart_time - now
 
-async def restart_pterodactyl_server():
+async def restart_pterodactyl_server(initiated_by: str):
     global next_restart_time
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
@@ -41,6 +41,7 @@ async def restart_pterodactyl_server():
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=data, headers=headers) as response:
                 if response.status in [204]:
+                    logging.info(f"Server restart command sent successfully by {initiated_by}.")
                     print("Server restart command sent successfully.")
                     now = datetime.now()
                     next_restart_time = now + restart_interval
@@ -49,6 +50,7 @@ async def restart_pterodactyl_server():
                     if channel:
                         await channel.send(f"The server has now been restarted, the next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
                 else:
+                    logging.warning(f"Failed to send restart command by {initiated_by}. HTTP status code: {response.status}, Response: {response_text}")
                     response_text = await response.text()
                     print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
     except Exception as e:
@@ -135,12 +137,6 @@ async def postpone(interaction: Interaction, extended: bool = SlashOption(descri
     update_presence.restart()
     extend_duration = 15 if extended else 5
     logging.info(f"Postpone command used by {interaction.user.name}, extending by {extend_duration} minutes.")
-    
-    async def restart_pterodactyl_server(initiated_by: str):
-        if response.status in [204]:
-            logging.info(f"Server restart command sent successfully by {initiated_by}.")
-        else:
-            logging.warning(f"Failed to send restart command by {initiated_by}. HTTP status code: {response.status}, Response: {response_text}")
 
 if __name__ == "__main__":
     bot.run(os.getenv("DISCORD_TOKEN"))
