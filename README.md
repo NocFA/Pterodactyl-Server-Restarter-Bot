@@ -2,6 +2,8 @@
 
 I set this up for me and my friend's palworld server due to the horrid memory leak.
 Do not expect support/updates, provided as-is.
+There's a few references to `Palworld` within the code, you can of course modify & change this quite easily.
+I would say this is a good foundational bot if you want to add a bunch of features for some kind of pterodactyl interactable bot.
 
 # What do it do?
 Very simple bot that has a set interval `restart_interval` which by default is 12 hours.
