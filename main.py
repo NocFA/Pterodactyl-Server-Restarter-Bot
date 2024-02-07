@@ -73,7 +73,7 @@ class RestartControlView(View):
     async def restart_now(self, button: Button, interaction: Interaction):
         await restart_pterodactyl_server()
         await self.disable_buttons()
-        await interaction.response.edit_message(view=self)
+        await interaction.response.edit_message(content="Restarting the Palworld server now...", view=self)
         
     @nextcord.ui.button(label="Postpone Short (5 mins)", style=ButtonStyle.blurple)
     async def postpone_short(self, button: Button, interaction: Interaction):
