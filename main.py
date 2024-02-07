@@ -36,18 +36,22 @@ async def restart_pterodactyl_server():
     }
     data = {"signal": "start"}
 
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, json=data, headers=headers) as response:
-            if response.status in [204, 200]:
-                print("Server restart command sent successfully.")
-                now = datetime.now()
-                next_restart_time = now + restart_interval
-                update_presence.restart()
-                print(f"Next restart time has been reset to {next_restart_time}.")
-                channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
-                channel = bot.get_channel(channel_id)
-                if channel:
-                    await channel.send(f"The server restart has been successfully initiated. The next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url, json=data, headers=headers) as response:
+                if response.status in [204]:
+                    print("Server restart command sent successfully.")
+                    now = datetime.now()
+                    next_restart_time = now + restart_interval
+                    channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
+                    channel = bot.get_channel(channel_id)
+                    if channel:
+                        await channel.send(f"The server restart has been successfully initiated. The next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
+                else:
+                    response_text = await response.text()
+                    print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
 @bot.event
 async def on_ready():
