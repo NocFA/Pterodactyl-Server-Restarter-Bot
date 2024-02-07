@@ -99,9 +99,11 @@ class RestartControlView(View):
         await channel.send("Server restart postponed by 15 minutes!")
         await interaction.response.edit_message(content="Server restart postponed by 15 minutes!", view=self)
         update_presence.restart()
-        
+
+last_notification_message = None
 @tasks.loop(seconds=60)
 async def send_restart_notification():
+    global last_notification_message
     time_until_restart = calculate_time_until_restart()
     total_seconds = int(time_until_restart.total_seconds())
 
@@ -110,13 +112,19 @@ async def send_restart_notification():
         minutes = next(time for time in notification_times if time - 60 < total_seconds <= time) // 60
         channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
         channel = bot.get_channel(channel_id)
-        
-        embed = nextcord.Embed(title="🚨 Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} minutes!", color=0x3498db)
+
+        embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} minutes!", color=0x3498db)
         embed.add_field(name="Action", value="You can postpone the restart using the buttons below.", inline=False)
-        await channel.send(embed=embed, view=RestartControlView(timeout=180))
+        
+        if last_notification_message:
+            await last_notification_message.edit(embed=embed, view=RestartControlView(timeout=180))
+        else:
+            last_notification_message = await channel.send(embed=embed, view=RestartControlView(timeout=180))
     elif total_seconds <= 0:
         await restart_pterodactyl_server()
-        await channel.send("🔄 Palworld server is restarting now...")
+        if last_notification_message:
+            await last_notification_message.edit(content="🔄 Palworld server is restarting now...", embed=None, view=None)
+            last_notification_message = None
 
 @tasks.loop(seconds=10)
 async def update_presence():
