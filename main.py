@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 load_dotenv()
 bot = commands.Bot(command_prefix="/", intents=nextcord.Intents.default())
 
-restart_interval = timedelta(minutes=16)
+restart_interval = timedelta(minutes=15)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 
@@ -34,7 +34,7 @@ async def restart_pterodactyl_server():
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
-    data = {"signal": "start"}
+    data = {"signal": "restart"}
 
     try:
         async with aiohttp.ClientSession() as session:
@@ -46,7 +46,7 @@ async def restart_pterodactyl_server():
                     channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
                     channel = bot.get_channel(channel_id)
                     if channel:
-                        await channel.send(f"The server restart has been successfully initiated. The next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
+                        await channel.send(f"The server has now been restarted, the next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
                 else:
                     response_text = await response.text()
                     print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
