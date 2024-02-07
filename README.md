@@ -18,7 +18,7 @@ Make a .env, populate it with the following, you will in your own details.
 
 ```
 DISCORD_TOKEN= # Your Discord bot token
-PTERODACTYL_API_KEY= # Your Pterodactyl application API key (needs power perms)
+PTERODACTYL_API_KEY= # Your Pterodactyl account API key (NOT APPLICATION API)
 PTERODACTYL_PANEL_URL= # Your Pterodactyl's public URL (for API)
 PTERODACTYL_SERVER_ID= # Your Pterodactyl server ID, grab from admin area
 NOTIFICATION_CHANNEL_ID= # Channel you want to notify users in about the restart
