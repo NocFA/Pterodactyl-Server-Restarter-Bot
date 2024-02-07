@@ -34,7 +34,7 @@ async def restart_pterodactyl_server():
         "Accept": "application/json",
         "Content-Type": "application/json"
     }
-    data = {"signal": "restart"}
+    data = {"signal": "start"}
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=data, headers=headers) as response:
@@ -122,10 +122,10 @@ async def postpone(interaction: Interaction, extended: bool = SlashOption(descri
     global next_restart_time
     if extended:
         next_restart_time += timedelta(minutes=15)
-        await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
+        await interaction.response.send_message("Server restart postponed by 30 minutes!", ephemeral=True)
     else:
         next_restart_time += timedelta(minutes=5)
-        await interaction.response.send_message("Server restart postponed by 5 minutes!", ephemeral=True)
+        await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
     update_presence.restart()
 
 if __name__ == "__main__":
