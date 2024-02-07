@@ -12,7 +12,7 @@ load_dotenv()
 bot = commands.Bot(command_prefix="/", intents=nextcord.Intents.default())
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-restart_interval = timedelta(minutes=15)
+restart_interval = timedelta(hours=12)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 
