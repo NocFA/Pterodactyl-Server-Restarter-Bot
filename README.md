@@ -4,15 +4,31 @@
 
 Windows:
 
-`.\venv\Scripts\activate`
+- Install Python - https://www.python.org/downloads/windows/
+- Clone/download this repo.
+- Extract to folder of your desire, move to dependency installation
+- Move to dependency Installation
 
 Linux:
 
+
 TBA
 
-## Install Nextcord, aiohttp, and python-dotenv
+## Dependency Installation
 
-`pip install nextcord aiohttp python-dotenv`
+Windows:
+
+- Open shell in directory you extracted the files in.
+- Run `pip install nextcord aiohttp python-dotenv`
+- Move to starting the bot
+
+## Configure & start the bot
+
+Windows:
+
+- Open the `.env example` file and add your token, and other details, along with renaming the file to just `.env`
+- Use the shell you had opened prior to run the bot with `pythn main.py` the comamnd may differ depending on your verison of python, eg `python3.12.exe main.py`
+- Done!
 
 Make a .env, populate it with the following, you will in your own details.
 
