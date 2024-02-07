@@ -27,6 +27,7 @@
 
 ## Linux:
 
+- Open the `.env example` file and add your token, and other details, along with renaming the file to just `.env`
 - pip install -r requirements.txt
 
 # Configure & start the bot
@@ -42,7 +43,7 @@
 
 ### The PM2 way
 
-- pm2 start main.py --interpreter=python3
+- pm2 start main.py --interpreter=python3 (Your may need to hardcode the correct path depending on what python your pip installed to, use venv to make life easier)
 
 ### The not PM2 way
 
