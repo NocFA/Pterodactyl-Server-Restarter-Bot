@@ -65,6 +65,7 @@ class RestartControlView(View):
                 item.disabled = True
         self.stop()     
 
+    @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
     async def restart_now(self, button: Button, interaction: Interaction):
         await restart_pterodactyl_server()
         await self.disable_buttons()
