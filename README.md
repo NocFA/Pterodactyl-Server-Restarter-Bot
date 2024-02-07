@@ -1,6 +1,18 @@
-# Simple Palworld Restarter-thingy!
+# Simple Pterodactyl Game Restart Bot
+
+I set this up for me and my friend's palworld server due to the horrid memory leak.
+Do not expect support/updates, provided as-is.
 
 # How to use?
+
+These instructions aren't final, nor will work on everyone's system, things will differ.
+This is what works on mine, so, please take it with a pinch of salt.
+
+In most cases, you're best to run any python bot with `venv` for a virtual environment, especially if you've used python elsewhere.
+
+## Requirments
+- Requires Python 3.9 or above.
+- Requires Pterodactyl panel with API access
 
 ## Windows:
 
@@ -29,6 +41,7 @@
 
 - Open the `.env example` file and add your token, and other details, along with renaming the file to just `.env`
 - pip install -r requirements.txt
+- (Optional) Do this in venv with 
 
 # Configure & start the bot
 
@@ -47,12 +60,15 @@
 
 ### The not PM2 way
 
+- (Optional) Run in a screen `dnf/apt install screen` to ensure it runs without you needing to be logged in.
 - In the directory, run `python3 main.py` (your version/executable may differ)
+Do note, with the latter option, if you exit the shell, the bot will also exit, you need to use PM2/screen/tmux to keep a shell instance alive, or, run it in the background or as a service.
 
+## Will this work on x or y host?
 
+- Likely, yes, but, support won't be provided for it, the bot is as-is.
 
-### Default .env requirements:
-
+## Default .env requirements:
 
 ```
 DISCORD_TOKEN= # Your Discord bot token
