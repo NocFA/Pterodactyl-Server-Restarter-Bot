@@ -1,44 +1,44 @@
 # Simple Palworld Restarter-thingy!
 
-## How to use?
+# How to use?
 
-Windows:
+## Windows:
 
 - Install Python - https://www.python.org/downloads/windows/
 - Clone/download this repo.
 - Extract files as needed to the folder you desire.
 - Move to dependency Installation
 
-Linux:
+## Linux:
 
 - Install python, this will vary based on what distro you have, please check python docks - https://www.python.org/downloads/
 - Clone/download this repo.
 - Extract files as needed to the folder you desire.
 - Move to dependency Installation
 
-## Dependency Installation
+# Dependency Installation
 
-Windows:
+## Windows:
 
 - Open shell in directory you extracted the files in.
 - (Optional) run from virtual env `python -m venv venv` & activate with `.\venv\Scripts\activate`
 - Run `pip install -r requirements.txt` to install all dependencies for the bot
 - Move to starting the bot
 
-Linux:
+## Linux:
 
 - pip install -r requirements.txt
 
-## Configure & start the bot
+# Configure & start the bot
 
-Windows:
+## Windows:
 
 - Open the `.env example` file and add your token, and other details, along with renaming the file to just `.env`
 - Use the shell you had opened prior to run the bot with `pythn main.py` the comamnd may differ depending on your verison of python, eg `python3.12.exe main.py`
 (If you used the venv, it'll always be `python` for the launch executable, so, use `python main.py`)
 - Done!
 
-Linux:
+## Linux:
 
 ### The PM2 way
 
