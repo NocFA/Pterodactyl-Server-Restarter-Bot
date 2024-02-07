@@ -57,6 +57,11 @@ async def on_ready():
 class RestartControlView(View):
     def __init__(self, *, timeout=None):
         super().__init__(timeout=timeout)
+        
+        async def disable_buttons(self):
+            for item in self.children:
+                if isinstance(item, Button):
+                    item.disabled = True        
 
     @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
     async def restart_now(self, button: Button, interaction: Interaction):
