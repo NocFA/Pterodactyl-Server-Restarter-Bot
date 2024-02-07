@@ -3,6 +3,7 @@ from nextcord.ext import commands, tasks
 from nextcord import Interaction, SlashOption, ButtonStyle
 from nextcord.ui import Button, View
 import os
+import logging
 from dotenv import load_dotenv
 import aiohttp
 from datetime import datetime, timedelta
@@ -71,7 +72,8 @@ class RestartControlView(View):
 
     @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
     async def restart_now(self, button: Button, interaction: Interaction):
-        await restart_pterodactyl_server()
+        await restart_pterodactyl_server(interaction.user.name)
+        logging.info(f"Restart Now button pressed by {interaction.user.name}.")
         await self.disable_buttons()
         await interaction.response.edit_message(content="Restarting the Palworld server now...", view=self)
         
@@ -122,7 +124,7 @@ async def update_presence():
     await bot.change_presence(activity=nextcord.Game(name=time_str))
 
 @bot.slash_command(description="Postpone the server restart by a certain duration, requires permission.")
-async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the postpone to 30 minutes", required=False, default=False)):
+async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the postpone to 15 minutes", required=False, default=False)):
     global next_restart_time
     if extended:
         next_restart_time += timedelta(minutes=15)
@@ -131,6 +133,14 @@ async def postpone(interaction: Interaction, extended: bool = SlashOption(descri
         next_restart_time += timedelta(minutes=5)
         await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
     update_presence.restart()
+    extend_duration = 15 if extended else 5
+    logging.info(f"Postpone command used by {interaction.user.name}, extending by {extend_duration} minutes.")
+    
+    async def restart_pterodactyl_server(initiated_by: str):
+        if response.status in [204]:
+            logging.info(f"Server restart command sent successfully by {initiated_by}.")
+        else:
+            logging.warning(f"Failed to send restart command by {initiated_by}. HTTP status code: {response.status}, Response: {response_text}")
 
 if __name__ == "__main__":
     bot.run(os.getenv("DISCORD_TOKEN"))
