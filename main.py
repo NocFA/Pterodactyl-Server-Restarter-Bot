@@ -38,7 +38,7 @@ async def restart_pterodactyl_server():
 
     async with aiohttp.ClientSession() as session:
         async with session.post(url, json=data, headers=headers) as response:
-            if response.status in [204]:
+            if response.status in [204, 200]:
                 print("Server restart command sent successfully.")
                 now = datetime.now()
                 next_restart_time = now + restart_interval
