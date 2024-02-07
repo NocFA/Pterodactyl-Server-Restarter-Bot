@@ -4,3 +4,4 @@ venv
 assets
 FUNDING.yml
 .github
+.github/*
