@@ -127,14 +127,14 @@ async def update_presence():
     await bot.change_presence(activity=nextcord.Game(name=time_str))
 
 @bot.slash_command(description="Postpone the server restart by a certain duration, requires permission.")
-async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the postpone to 15 minutes", required=False, default=False)):
+async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the postpone to 5 or 15 minutes", required=False, default=False)):
     global next_restart_time
     if extended:
         next_restart_time += timedelta(minutes=15)
-        await interaction.response.send_message("Server restart postponed by 30 minutes!", ephemeral=True)
+        await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
     else:
         next_restart_time += timedelta(minutes=5)
-        await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
+        await interaction.response.send_message("Server restart postponed by 5 minutes!", ephemeral=True)
     update_presence.restart()
     extend_duration = 15 if extended else 5
     logging.info(f"Postpone command used by {interaction.user.name}, extending by {extend_duration} minutes.")
