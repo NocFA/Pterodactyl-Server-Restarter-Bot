@@ -15,7 +15,6 @@ bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 
 def calculate_time_until_restart():
-    """Calculate the time remaining until the next restart."""
     global next_restart_time
     now = datetime.now()
     if now >= next_restart_time:
@@ -23,23 +22,30 @@ def calculate_time_until_restart():
             next_restart_time += restart_interval
     return next_restart_time - now
 
-@tasks.loop(minutes=1)
+@tasks.loop(seconds=10)
 async def update_presence():
-    """Update the bot's rich presence with the time until restart."""
     time_until_restart = calculate_time_until_restart()
     hours, remainder = divmod(int(time_until_restart.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
-    time_str = f"{hours}h {minutes}m until restart"
+    time_str = f"{hours}h {minutes}m {seconds}s until restart"
     await bot.change_presence(activity=nextcord.Game(name=time_str))
+
 
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}!')
     update_presence.start()
 
-@bot.slash_command(description="Postpone the server restart by 30 minutes, requires permission.")
+@bot.slash_command(description="Postpone the server restart by a certain duration, requires permission.")
 async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the postpone to 30 minutes", required=False, default=False)):
-    await interaction.response.send_message("Server restart postponed!", ephemeral=True)
+    global next_restart_time
+    if extended:
+        next_restart_time += timedelta(minutes=15)
+        await interaction.response.send_message("Server restart postponed by 15 minutes!", ephemeral=True)
+    else:
+        next_restart_time += timedelta(minutes=5)
+        await interaction.response.send_message("Server restart postponed by 5 minutes!", ephemeral=True)
+    update_presence.restart()
 
 if __name__ == "__main__":
     bot.run(os.getenv("DISCORD_TOKEN"))
