@@ -23,6 +23,7 @@ def calculate_time_until_restart():
     return next_restart_time - now
 
 async def restart_pterodactyl_server():
+    global next_restart_time
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
     panel_url = os.getenv("PTERODACTYL_PANEL_URL")
@@ -39,9 +40,13 @@ async def restart_pterodactyl_server():
         async with session.post(url, json=data, headers=headers) as response:
             if response.status in [204]:
                 print("Server restart command sent successfully.")
-            else:
-                response_text = await response.text()
-                print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
+                now = datetime.now()
+                next_restart_time = now + restart_interval
+                print(f"Next restart time has been reset to {next_restart_time}.")
+                channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
+                channel = bot.get_channel(channel_id)
+                if channel:
+                    await channel.send(f"The server restart has been successfully initiated. The next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
 
 @bot.event
 async def on_ready():
