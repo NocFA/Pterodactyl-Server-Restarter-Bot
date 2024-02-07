@@ -26,7 +26,7 @@ async def restart_pterodactyl_server():
     global next_restart_time
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
-    panel_url = os.getenv("PTERODACTYL_PANEL_URL")
+    panel_url = os.getenv("PTERODACTYL_PANEL_URL").rstrip('/')
 
     url = f"{panel_url}/api/client/servers/{server_id}/power"
     headers = {
