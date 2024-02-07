@@ -48,7 +48,10 @@
 
 - In the directory, run `python3 main.py` (your version/executable may differ)
 
-Make a .env, populate it with the following, you will in your own details.
+
+
+### Default .env requirements:
+
 
 ```
 DISCORD_TOKEN= # Your Discord bot token
