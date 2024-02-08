@@ -122,6 +122,7 @@ async def send_restart_notification():
         else:
             last_notification_message = await channel.send(embed=embed, view=RestartControlView(timeout=180))
     elif total_seconds <= 0:
+        logging.info("Attempting to restart the server as the countdown has reached zero.")        
         await restart_pterodactyl_server("System")
         if last_notification_message:
             view = RestartControlView(timeout=180)
