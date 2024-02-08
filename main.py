@@ -24,7 +24,7 @@ def calculate_time_until_restart():
             next_restart_time += restart_interval
     return next_restart_time - now
 
-async def restart_pterodactyl_server(initiated_by: str = "Automatic"):
+async def restart_pterodactyl_server(initiated_by: str):
     global next_restart_time
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
@@ -41,6 +41,7 @@ async def restart_pterodactyl_server(initiated_by: str = "Automatic"):
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=data, headers=headers) as response:
+                response_text = await response.text()
                 if response.status in [204]:
                     logging.info(f"Server restart command sent successfully by {initiated_by}.")
                     print("Server restart command sent successfully.")
@@ -52,7 +53,6 @@ async def restart_pterodactyl_server(initiated_by: str = "Automatic"):
                         await channel.send(f"The server has now been restarted, the next restart schedule is reset to {next_restart_time.strftime('%Y-%m-%d %H:%M:%S')}.")
                 else:
                     logging.warning(f"Failed to send restart command by {initiated_by}. HTTP status code: {response.status}, Response: {response_text}")
-                    response_text = await response.text()
                     print(f"Failed to send restart command. HTTP status code: {response.status}, Response: {response_text}")
     except Exception as e:
         logging.error(f"An error occurred during restart attempt by {initiated_by}: {e}")
