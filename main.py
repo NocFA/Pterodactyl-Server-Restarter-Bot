@@ -29,7 +29,7 @@ async def restart_pterodactyl_server(initiated_by: str):
     api_key = os.getenv("PTERODACTYL_API_KEY")
     server_id = os.getenv("PTERODACTYL_SERVER_ID")
     panel_url = os.getenv("PTERODACTYL_PANEL_URL").rstrip('/')
-
+    
     url = f"{panel_url}/api/client/servers/{server_id}/power"
     headers = {
         "Authorization": f"Bearer {api_key}",
@@ -122,13 +122,14 @@ async def send_restart_notification():
         else:
             last_notification_message = await channel.send(embed=embed, view=RestartControlView(timeout=180))
     elif total_seconds <= 0:
-        logging.info("Attempting to restart the server as the countdown has reached zero.")        
+        logging.info("Countdown has reached zero. Attempting automatic server restart.")
         await restart_pterodactyl_server("System")
         if last_notification_message:
-            view = RestartControlView(timeout=180)
-            await view.disable_buttons()
-            await last_notification_message.edit(content="🔄 Palworld server is restarting now...", embed=None, view=view)
-            last_notification_message = None
+            try:
+                await last_notification_message.edit(content="🔄 Palworld server is restarting now...", embed=None, view=None)
+                last_notification_message = None
+            except Exception as e:
+                logging.error(f"Failed to update the restart notification message: {e}")
 
 @tasks.loop(seconds=10)
 async def update_presence():
