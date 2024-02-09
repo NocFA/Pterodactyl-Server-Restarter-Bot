@@ -6,6 +6,9 @@ import os
 import logging
 from dotenv import load_dotenv
 import aiohttp
+import asyncio
+import socket
+import struct
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -18,6 +21,135 @@ restart_interval = timedelta(hours=10)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
+
+
+### RCON Initalize, yes, I'm sending raw rcon via asyncio because RCON libraries are horrid
+async def rcon_send_command(command):
+    SERVER_IP = os.getenv('SERVER_IP')
+    RCON_PORT = os.getenv('RCON_PORT')
+    RCON_PASSWORD = os.getenv('RCON_PASSWORD')
+
+    # Check for missing RCON configuration
+    if not SERVER_IP or not RCON_PORT or not RCON_PASSWORD:
+        return "RCON configuration is incomplete. Please check your SERVER_IP, RCON_PORT, and RCON_PASSWORD environment variables."
+
+    try:
+        RCON_PORT = int(RCON_PORT)  # Ensure RCON_PORT is an integer
+    except ValueError:
+        return "Invalid RCON_PORT. Please ensure it's a valid integer."
+
+    try:
+        reader, writer = await asyncio.open_connection(SERVER_IP, RCON_PORT)
+        packet_id = 1
+        packet_type = 3
+        auth_packet = struct.pack('<3i', 10 + len(RCON_PASSWORD), packet_id, packet_type) + RCON_PASSWORD.encode('ascii') + b'\x00\x00'
+        writer.write(auth_packet)
+        await writer.drain()
+
+        auth_response = await reader.read(4096)
+        _, response_id, _ = struct.unpack('<3i', auth_response[:12])
+
+        if response_id == -1:
+            return "Authentication failed with the RCON server."
+
+        packet_type = 2
+        command_packet = struct.pack('<3i', 10 + len(command), packet_id, packet_type) + command.encode('ascii') + b'\x00\x00'
+        writer.write(command_packet)
+        await writer.drain()
+
+        response = await reader.read(4096)
+        response_text = response[12:-2].decode('ascii')
+
+        writer.close()
+        await writer.wait_closed()
+        return response_text
+    except Exception as e:
+        return f"Failed to execute RCON command due to an error: {e}"
+
+@bot.slash_command(name="save", description="Saves the current state of the game server.")
+async def save(interaction: Interaction):
+    save_response = await rcon_send_command("Save")
+    if "Complete Save" in save_response:
+        embed = nextcord.Embed(title="Save Successful", description="The game server state has been saved successfully.", color=0x00ff00)  # Green color
+        await interaction.response.send_message(embed=embed, ephemeral=True)
+    else:
+        await interaction.response.send_message(f"Failed to save game server state: {save_response}", ephemeral=True)
+
+### This was built with my server in mind, obviously, this may not parse your name/version correctly.
+@bot.slash_command(name="info", description="Displays information about the game server.")
+async def info(interaction: Interaction):
+    info_response = await rcon_send_command("info")
+
+    # Check if the response indicates a configuration or connection error
+    if "RCON configuration is incomplete" in info_response or "Failed to execute RCON command" in info_response:
+        # Send back the error message directly without trying to parse
+        await interaction.response.send_message(info_response, ephemeral=True)
+        return
+
+    # Proceed with parsing if no configuration or connection error
+    try:
+        version_start = info_response.find("[v") + 1
+        version_end = info_response.find("]", version_start)
+        version = info_response[version_start:version_end]
+        name = info_response.split("]")[1].strip() if "]" in info_response else "Unknown"
+        formatted_response = f"**Version** - {version}\n**Name** - {name}"
+    except Exception as e:
+        formatted_response = f"Failed to parse info response: {str(e)}"
+    
+    await interaction.response.send_message(formatted_response, ephemeral=True)
+    
+### Untested commands, proceed with caution
+    
+@bot.slash_command(name="shutdown", description="Initiates a server shutdown with a timer and a custom message, untested.")
+async def shutdown(interaction: Interaction, seconds: int = SlashOption(description="Delay in seconds before the server shuts down"),
+                   message_text: str = SlashOption(description="Custom shutdown message")):
+    admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
+    if admin_role_id not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    rcon_command = f"Shutdown {seconds} {message_text}"
+    shutdown_response = await rcon_send_command(rcon_command)
+    
+    if "RCON configuration is incomplete" in shutdown_response or "Failed to execute RCON command" in shutdown_response:
+        await interaction.response.send_message(shutdown_response, ephemeral=True)
+    else:
+        await interaction.response.send_message(f"Shutdown command sent successfully. Server will shutdown in {seconds} seconds with message: \"{message_text}\"", ephemeral=True)
+        
+@bot.slash_command(name="broadcast", description="Broadcasts a message on the server.")
+async def broadcast(interaction: Interaction, message: str = SlashOption(description="Message to broadcast")):
+    admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
+    if admin_role_id not in [role.id for role in interaction.user.roles]:
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    # Replace spaces with underscores in the message (otherwise it breaks)
+    formatted_message = message.replace(" ", "_")
+    
+    rcon_command = f"broadcast {formatted_message}"
+    broadcast_response = await rcon_send_command(rcon_command)
+    
+    if "RCON configuration is incomplete" in broadcast_response or "Failed to execute RCON command" in broadcast_response:
+        await interaction.response.send_message(broadcast_response, ephemeral=True)
+    else:
+        await interaction.response.send_message(f"Broadcast message sent successfully: \"{message}\"", ephemeral=True)
+
+
+### Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
+#@bot.slash_command(name="rcon", description="Execute an RCON command on the server.")
+#async def rcon_command(interaction: nextcord.Interaction, command: str):
+    #await interaction.response.defer(ephemeral=True)
+    #response = await rcon_send_command(command)
+    #await interaction.followup.send(f"RCON response: ```{response}```", ephemeral=True)
+    
+### Fetch playercount with RCON for Discord RP
+
+async def fetch_player_count():
+    player_list_response = await rcon_send_command("ShowPlayers")
+    # Split response into lines and remove the header row
+    player_list_lines = player_list_response.strip().split('\n')[1:]  # Skip the header
+    player_count = len(player_list_lines)  # Count the remaining lines for player count
+    return player_count
 
 def calculate_time_until_restart():
     global next_restart_time
@@ -159,8 +291,9 @@ async def update_presence():
     time_until_restart = calculate_time_until_restart()
     hours, remainder = divmod(int(time_until_restart.total_seconds()), 3600)
     minutes, seconds = divmod(remainder, 60)
-    time_str = f"{hours}h {minutes}m {seconds}s until restart"
-    await bot.change_presence(activity=nextcord.Game(name=time_str))
+    player_count = await fetch_player_count()
+    status_message = f"{player_count}/32 players | {hours}h {minutes}m {seconds}s until restart"
+    await bot.change_presence(activity=nextcord.Game(name=status_message))
 
 @bot.slash_command(description="Postpone the server restart by a certain duration, requires permission.")
 async def postpone(interaction: Interaction, extended: bool = SlashOption(description="Extend the restart 5 or 15 minutes (true for 15)", required=False, default=False)):

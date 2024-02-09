@@ -93,4 +93,8 @@ PTERODACTYL_PANEL_URL= # Your Pterodactyl's public URL (for API)
 PTERODACTYL_SERVER_ID= # Your Pterodactyl server ID, grab from admin area
 NOTIFICATION_CHANNEL_ID= # Channel you want to notify users in about the restart
 RESTART_NOTIFICATION_ROLE_ID= # Role to ping for the notification
+ADMIN_ROLE_ID= (Optional) # Role for admin RCON commands (broadcast, restart, etc)
+SERVER_IP= # (Optional) Your server's IP address.
+RCON_PORT= # (Optional) Your RCON port, this is separate from main port, default is 25575.
+RCON_PASSWORD= # (Optional) If using RCON, set the server admin password here, yes, you have to have one/.
 ```
