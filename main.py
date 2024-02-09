@@ -70,8 +70,9 @@ async def rcon_send_command(command):
 async def save(interaction: Interaction):
     save_response = await rcon_send_command("Save")
     if "Complete Save" in save_response:
+        logging.info(f"Game saved by {interaction.user.name}.")
         embed = nextcord.Embed(title="Save Successful", description="The game server state has been saved successfully.", color=0x00ff00)  # Green color
-        await interaction.response.send_message(embed=embed, ephemeral=True)
+        await interaction.response.send_message(embed=embed, ephemeral=False)
     else:
         await interaction.response.send_message(f"Failed to save game server state: {save_response}", ephemeral=True)
 
@@ -95,8 +96,29 @@ async def info(interaction: Interaction):
         formatted_response = f"**Version** - {version}\n**Name** - {name}"
     except Exception as e:
         formatted_response = f"Failed to parse info response: {str(e)}"
+    logging.info(f"Info requested by {interaction.user.name}.")
+    await interaction.response.send_message(formatted_response, ephemeral=False)
     
-    await interaction.response.send_message(formatted_response, ephemeral=True)
+@bot.slash_command(name="broadcast", description="Broadcasts a message on the server.")
+async def broadcast(interaction: Interaction, message: str = SlashOption(description="Message to broadcast")):
+    admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
+    if admin_role_id not in [role.id for role in interaction.user.roles]:
+        logging.info(f"Attempt to broadcast without permission issued by {interaction.user.name}.")
+        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
+        return
+
+    # Replace spaces with underscores in the message (otherwise it breaks)
+    formatted_message = message.replace(" ", "_")
+    
+    logging.info(f"Broadcast request issued by {interaction.user.name}.")
+    rcon_command = f"broadcast {formatted_message}"
+    broadcast_response = await rcon_send_command(rcon_command)
+    
+    if "RCON configuration is incomplete" in broadcast_response or "Failed to execute RCON command" in broadcast_response:
+        await interaction.response.send_message(broadcast_response, ephemeral=True)
+    else:
+        logging.info(f"Broadcast sent: [{message}] by {interaction.user.name}.")
+        await interaction.response.send_message(f"Broadcast message sent successfully: \"{message}\"", ephemeral=True)
     
 ### Untested commands, proceed with caution
     
@@ -105,34 +127,19 @@ async def shutdown(interaction: Interaction, seconds: int = SlashOption(descript
                    message_text: str = SlashOption(description="Custom shutdown message")):
     admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
     if admin_role_id not in [role.id for role in interaction.user.roles]:
+        logging.info(f"Shutdown was attempted without permission by {interaction.user.name}.")
         await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
         return
-
+    
+    logging.info(f"Shutdown has been issued by {interaction.user.name}.")
     rcon_command = f"Shutdown {seconds} {message_text}"
     shutdown_response = await rcon_send_command(rcon_command)
     
     if "RCON configuration is incomplete" in shutdown_response or "Failed to execute RCON command" in shutdown_response:
         await interaction.response.send_message(shutdown_response, ephemeral=True)
     else:
+        logging.info(f"Shutdown attempt was successful, issued by {interaction.user.name}.")
         await interaction.response.send_message(f"Shutdown command sent successfully. Server will shutdown in {seconds} seconds with message: \"{message_text}\"", ephemeral=True)
-        
-@bot.slash_command(name="broadcast", description="Broadcasts a message on the server.")
-async def broadcast(interaction: Interaction, message: str = SlashOption(description="Message to broadcast")):
-    admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
-    if admin_role_id not in [role.id for role in interaction.user.roles]:
-        await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
-        return
-
-    # Replace spaces with underscores in the message (otherwise it breaks)
-    formatted_message = message.replace(" ", "_")
-    
-    rcon_command = f"broadcast {formatted_message}"
-    broadcast_response = await rcon_send_command(rcon_command)
-    
-    if "RCON configuration is incomplete" in broadcast_response or "Failed to execute RCON command" in broadcast_response:
-        await interaction.response.send_message(broadcast_response, ephemeral=True)
-    else:
-        await interaction.response.send_message(f"Broadcast message sent successfully: \"{message}\"", ephemeral=True)
 
 
 ### Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
