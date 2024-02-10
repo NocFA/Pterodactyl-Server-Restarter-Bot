@@ -243,6 +243,7 @@ class RestartControlView(View):
         update_presence.restart()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
+        logging.info(f"Restart postponed for 15 minutes by {interaction.user.name}.")
 
     @nextcord.ui.button(label="Postpone Long (30 mins)", style=ButtonStyle.success)
     async def postpone_long(self, button: Button, interaction: Interaction):
@@ -254,6 +255,7 @@ class RestartControlView(View):
         update_presence.restart()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
+        logging.info(f"Restart postponed for 30 minutes by {interaction.user.name}.")
 
 last_notification_message = None
 notification_sent = {900: False, 300: False, 120: False}
