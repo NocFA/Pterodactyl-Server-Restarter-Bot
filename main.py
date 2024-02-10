@@ -17,7 +17,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-restart_interval = timedelta(hours=10)
+restart_interval = timedelta(minutes=15)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
@@ -205,8 +205,10 @@ async def restart_pterodactyl_server(initiated_by: str) -> bool:
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}!')
-    update_presence.start()
-    send_restart_notification.start()
+    if not update_presence.is_running():
+        update_presence.start()
+    if not send_restart_notification.is_running():
+        send_restart_notification.start()
 
 class RestartControlView(View):
     async def disable_buttons(self):
@@ -222,40 +224,46 @@ class RestartControlView(View):
 
     @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
     async def restart_now(self, button: Button, interaction: Interaction):
-        global last_notification_message
+        global last_notification_message, notification_sent, restart_initiated
         await restart_pterodactyl_server(interaction.user.name)
         logging.info(f"Restart Now button pressed by {interaction.user.name}.")
         await self.disable_buttons()
         await interaction.response.edit_message(content="🔄 Restarting the Palworld server now...", view=self)
         last_notification_message = None
+        restart_initiated = True
+        notification_sent = {900: False, 300: False, 120: False}
         
-    @nextcord.ui.button(label="Postpone Short (5 mins)", style=ButtonStyle.blurple)
+    @nextcord.ui.button(label="Postpone Short (15 mins)", style=ButtonStyle.blurple)
     async def postpone_short(self, button: Button, interaction: Interaction):
-        global next_restart_time
-        next_restart_time += timedelta(minutes=5)
-        channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
-        channel = bot.get_channel(channel_id)
-        await interaction.response.edit_message(content="⏸️ Server restart postponed by 5 minutes!", view=self)
-        update_presence.restart()
-
-    @nextcord.ui.button(label="Postpone Long (15 mins)", style=ButtonStyle.success)
-    async def postpone_long(self, button: Button, interaction: Interaction):
-        global next_restart_time
+        global next_restart_time, notification_sent, last_notification_message
         next_restart_time += timedelta(minutes=15)
         channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
         channel = bot.get_channel(channel_id)
         await interaction.response.edit_message(content="⏸️ Server restart postponed by 15 minutes!", view=self)
         update_presence.restart()
+        last_notification_message = None
+        notification_sent = {900: False, 300: False, 120: False}
+
+    @nextcord.ui.button(label="Postpone Long (30 mins)", style=ButtonStyle.success)
+    async def postpone_long(self, button: Button, interaction: Interaction):
+        global next_restart_time, notification_sent, last_notification_message
+        next_restart_time += timedelta(minutes=30)
+        channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
+        channel = bot.get_channel(channel_id)
+        await interaction.response.edit_message(content="⏸️ Server restart postponed by 30 minutes!", view=self)
+        update_presence.restart()
+        last_notification_message = None
+        notification_sent = {900: False, 300: False, 120: False}
 
 last_notification_message = None
+notification_sent = {900: False, 300: False, 120: False}
 
 @tasks.loop(seconds=5)
 async def send_restart_notification():
-    global last_notification_message, restart_initiated
+    global last_notification_message, restart_initiated, notification_sent
     time_until_restart = calculate_time_until_restart()
     total_seconds = int(time_until_restart.total_seconds())
-    fifteen_minute_notification_sent = False
-    
+
     if total_seconds <= 10 and not restart_initiated:
         logging.info("Less than 10 seconds remaining, attempting automatic restart.")
         result = await restart_pterodactyl_server("System")
@@ -270,28 +278,37 @@ async def send_restart_notification():
         else:
             logging.error("Restart attempt failed.")
 
-    elif any(time - 60 < total_seconds <= time for time in [15 * 60, 5 * 60, 2 * 60]):
-        is_fifteen_minute_mark = total_seconds <= 15 * 60 and total_seconds > 14 * 55 and not fifteen_minute_notification_sent
-        role_id = os.getenv("RESTART_NOTIFICATION_ROLE_ID")
-        role_mention = f"<@&{role_id}> " if is_fifteen_minute_mark else ""
-        if is_fifteen_minute_mark:
-            fifteen_minute_notification_sent = True
-            
-        minutes = next((time for time in [15 * 60, 2 * 60, 2 * 60] if time - 60 < total_seconds <= time), None) // 60 if total_seconds > 60 else 0
-        minutes_str = "minute" if minutes == 1 else "minutes"
-        action_message = "You can postpone the restart, or, restart the server now using the buttons below."
-        embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes} {minutes_str}!", color=0x3498db)
-        embed.add_field(name="Action", value=action_message, inline=False)
-        
-        channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
-        channel = bot.get_channel(channel_id)
-        
-        message_content = role_mention if role_mention else None
+    else:
+        # Notification logic
+        notification_times = {900: "15 minutes", 300: "5 minutes", 120: "2 minutes"}
+        for notify_time, notify_message in notification_times.items():
+            if total_seconds <= notify_time and not notification_sent[notify_time]:
+                minutes_str = notify_message
+                logging.info("Embed updated")
+                action_message = "You can postpone the restart, or, restart the server now using the buttons below."
+                embed = nextcord.Embed(title="Server Restart Notification 🚨", description=f"The Palworld server is restarting in {minutes_str}!", color=0x3498db)
+                embed.add_field(name="Action", value=action_message, inline=False)
+                
+                channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
+                channel = bot.get_channel(channel_id)
+                message_content = None
 
-        if last_notification_message:
-            await last_notification_message.edit(content=message_content, embed=embed, view=RestartControlView(timeout=180))
-        else:
-            last_notification_message = await channel.send(content=message_content, embed=embed, view=RestartControlView(timeout=180))
+                if notify_time == 900 and not notification_sent[notify_time]:
+                    role_id = os.getenv("RESTART_NOTIFICATION_ROLE_ID")
+                    logging.info("Sent ping message")
+                    message_content = f"<@&{role_id}>" if role_id else ""
+
+                if last_notification_message and notify_time != 900:
+                    await last_notification_message.edit(content=message_content, embed=embed, view=RestartControlView(timeout=180))
+                else:
+                    last_notification_message = await channel.send(content=message_content, embed=embed, view=RestartControlView(timeout=180))
+
+                notification_sent[notify_time] = True
+
+    if total_seconds <= 10 and restart_initiated:
+        for key in notification_sent.keys():
+            notification_sent[key] = False
+        restart_initiated = False
 
 @tasks.loop(seconds=8)
 async def update_presence():
