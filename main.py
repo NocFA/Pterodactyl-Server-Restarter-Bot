@@ -17,7 +17,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-restart_interval = timedelta(minutes=15)
+restart_interval = timedelta(minutes=1)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
@@ -81,13 +81,9 @@ async def save(interaction: Interaction):
 async def info(interaction: Interaction):
     info_response = await rcon_send_command("info")
 
-    # Check if the response indicates a configuration or connection error
     if "RCON configuration is incomplete" in info_response or "Failed to execute RCON command" in info_response:
-        # Send back the error message directly without trying to parse
         await interaction.response.send_message(info_response, ephemeral=True)
         return
-
-    # Proceed with parsing if no configuration or connection error
     try:
         version_start = info_response.find("[v") + 1
         version_end = info_response.find("]", version_start)
@@ -141,6 +137,31 @@ async def shutdown(interaction: Interaction, seconds: int = SlashOption(descript
         logging.info(f"Shutdown attempt was successful, issued by {interaction.user.name}.")
         await interaction.response.send_message(f"Shutdown command sent successfully. Server will shutdown in {seconds} seconds with message: \"{message_text}\"", ephemeral=True)
 
+@bot.slash_command(name="showplayers", description="Shows the current list of players on the server, optionally with Steam IDs.")
+async def showplayers(interaction: Interaction, include_steamids: bool = SlashOption(description="Include Steam IDs in the output", required=False, default=False)):
+    if include_steamids:
+        admin_role_id = int(os.getenv("ADMIN_ROLE_ID"))
+        if admin_role_id not in [role.id for role in interaction.user.roles]:
+            await interaction.response.send_message("You do not have permission to view Steam IDs.", ephemeral=True)
+            return
+
+    show_players_response = await rcon_send_command("ShowPlayers")
+
+    if "RCON configuration is incomplete" in show_players_response or "Failed to execute RCON command" in show_players_response:
+        await interaction.response.send_message(show_players_response, ephemeral=True)
+    else:
+        players = [line.split(',') for line in show_players_response.strip().split('\n')]
+        players = players[1:]
+
+        if include_steamids:
+            message = '\n'.join([f"```ml\n{player[0]} - SteamID: {player[2]}\n```" for player in players])
+        else:
+            message = '\n'.join([f"```ml\n{player[0]}\n```" for player in players])
+
+        if len(message) >= 2000:
+            message = "The list is too long to display here. Please narrow down your criteria."
+
+        await interaction.response.send_message(f"## Players:\n{message}", ephemeral=True)
 
 ### Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
 #@bot.slash_command(name="rcon", description="Execute an RCON command on the server.")
@@ -180,8 +201,8 @@ async def restart_pterodactyl_server(initiated_by: str) -> bool:
         "Content-Type": "application/json"
     }
     data = {"signal": "restart"}
-
     try:
+        await rcon_send_command("Save")        
         async with aiohttp.ClientSession() as session:
             async with session.post(url, json=data, headers=headers) as response:
                 response_text = await response.text()
@@ -220,7 +241,7 @@ class RestartControlView(View):
         for item in self.children:
             if isinstance(item, Button):
                 item.disabled = True
-        self.stop()     
+        self.stop()
 
     @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
     async def restart_now(self, button: Button, interaction: Interaction):
@@ -236,11 +257,12 @@ class RestartControlView(View):
     @nextcord.ui.button(label="Postpone Short (15 mins)", style=ButtonStyle.blurple)
     async def postpone_short(self, button: Button, interaction: Interaction):
         global next_restart_time, notification_sent, last_notification_message
-        next_restart_time += timedelta(minutes=15)
+        next_restart_time += timedelta(minutes=1)
         channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
         channel = bot.get_channel(channel_id)
         await interaction.response.edit_message(content="⏸️ Server restart postponed by 15 minutes!", view=self)
         update_presence.restart()
+        await self.disable_buttons()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
         logging.info(f"Restart postponed for 15 minutes by {interaction.user.name}.")
@@ -253,6 +275,7 @@ class RestartControlView(View):
         channel = bot.get_channel(channel_id)
         await interaction.response.edit_message(content="⏸️ Server restart postponed by 30 minutes!", view=self)
         update_presence.restart()
+        await self.disable_buttons()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
         logging.info(f"Restart postponed for 30 minutes by {interaction.user.name}.")
