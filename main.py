@@ -17,7 +17,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-restart_interval = timedelta(minutes=1)
+restart_interval = timedelta(minutes=20)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
@@ -136,6 +136,7 @@ async def shutdown(interaction: Interaction, seconds: int = SlashOption(descript
     else:
         logging.info(f"Shutdown attempt was successful, issued by {interaction.user.name}.")
         await interaction.response.send_message(f"Shutdown command sent successfully. Server will shutdown in {seconds} seconds with message: \"{message_text}\"", ephemeral=True)
+        await restart_pterodactyl_server("System")
 
 @bot.slash_command(name="showplayers", description="Shows the current list of players on the server, optionally with Steam IDs.")
 async def showplayers(interaction: Interaction, include_steamids: bool = SlashOption(description="Include Steam IDs in the output", required=False, default=False)):
@@ -153,15 +154,19 @@ async def showplayers(interaction: Interaction, include_steamids: bool = SlashOp
         players = [line.split(',') for line in show_players_response.strip().split('\n')]
         players = players[1:]
 
-        if include_steamids:
-            message = '\n'.join([f"```ml\n{player[0]} - SteamID: {player[2]}\n```" for player in players])
-        else:
-            message = '\n'.join([f"```ml\n{player[0]}\n```" for player in players])
+        messages = []
+        for player in players:
+            if include_steamids:
+                messages.append(f"```yml\n{player[0]}\nSteamID: {player[2]}\n```")
+            else:
+                messages.append(f"```yml\n{player[0]}\n```")
+
+        message = '\n'.join(messages)
 
         if len(message) >= 2000:
             message = "The list is too long to display here. Please narrow down your criteria."
 
-        await interaction.response.send_message(f"## Players:\n{message}", ephemeral=True)
+        await interaction.response.send_message(f"### Players:\n{message}", ephemeral=True)
 
 ### Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
 #@bot.slash_command(name="rcon", description="Execute an RCON command on the server.")
