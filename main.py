@@ -9,6 +9,7 @@ import aiohttp
 import asyncio
 import socket
 import struct
+import time
 from datetime import datetime, timedelta
 
 load_dotenv()
@@ -17,7 +18,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-restart_interval = timedelta(minutes=20)
+restart_interval = timedelta(hours=6)
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
@@ -29,12 +30,11 @@ async def rcon_send_command(command):
     RCON_PORT = os.getenv('RCON_PORT')
     RCON_PASSWORD = os.getenv('RCON_PASSWORD')
 
-    # Check for missing RCON configuration
     if not SERVER_IP or not RCON_PORT or not RCON_PASSWORD:
         return "RCON configuration is incomplete. Please check your SERVER_IP, RCON_PORT, and RCON_PASSWORD environment variables."
 
     try:
-        RCON_PORT = int(RCON_PORT)  # Ensure RCON_PORT is an integer
+        RCON_PORT = int(RCON_PORT)
     except ValueError:
         return "Invalid RCON_PORT. Please ensure it's a valid integer."
 
@@ -71,7 +71,7 @@ async def save(interaction: Interaction):
     save_response = await rcon_send_command("Save")
     if "Complete Save" in save_response:
         logging.info(f"Game saved by {interaction.user.name}.")
-        embed = nextcord.Embed(title="Save Successful", description="The game server state has been saved successfully.", color=0x00ff00)  # Green color
+        embed = nextcord.Embed(title="Save Successful", description="The game server state has been saved successfully.", color=0x00ff00)
         await interaction.response.send_message(embed=embed, ephemeral=False)
     else:
         await interaction.response.send_message(f"Failed to save game server state: {save_response}", ephemeral=True)
@@ -103,7 +103,6 @@ async def broadcast(interaction: Interaction, message: str = SlashOption(descrip
         await interaction.response.send_message("You do not have permission to use this command.", ephemeral=True)
         return
 
-    # Replace spaces with underscores in the message (otherwise it breaks)
     formatted_message = message.replace(" ", "_")
     
     logging.info(f"Broadcast request issued by {interaction.user.name}.")
@@ -136,6 +135,7 @@ async def shutdown(interaction: Interaction, seconds: int = SlashOption(descript
     else:
         logging.info(f"Shutdown attempt was successful, issued by {interaction.user.name}.")
         await interaction.response.send_message(f"Shutdown command sent successfully. Server will shutdown in {seconds} seconds with message: \"{message_text}\"", ephemeral=True)
+        time.sleep(5.5)
         await restart_pterodactyl_server("System")
 
 @bot.slash_command(name="showplayers", description="Shows the current list of players on the server, optionally with Steam IDs.")
@@ -179,9 +179,8 @@ async def showplayers(interaction: Interaction, include_steamids: bool = SlashOp
 
 async def fetch_player_count():
     player_list_response = await rcon_send_command("ShowPlayers")
-    # Split response into lines and remove the header row
-    player_list_lines = player_list_response.strip().split('\n')[1:]  # Skip the header
-    player_count = len(player_list_lines)  # Count the remaining lines for player count
+    player_list_lines = player_list_response.strip().split('\n')[1:]
+    player_count = len(player_list_lines)
     return player_count
 
 def calculate_time_until_restart():
