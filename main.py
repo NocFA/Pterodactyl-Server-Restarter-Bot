@@ -308,10 +308,11 @@ async def send_restart_notification():
             logging.error("Restart attempt failed.")
 
     else:
-        # Notification logic
         notification_times = {900: "15 minutes", 300: "5 minutes", 120: "2 minutes"}
         for notify_time, notify_message in notification_times.items():
             if total_seconds <= notify_time and not notification_sent[notify_time]:
+                player_count = await fetch_player_count()
+                logging.info(f"Player count at {notify_message} mark: {player_count}")
                 minutes_str = notify_message
                 logging.info("Embed updated")
                 action_message = "You can postpone the restart, or, restart the server now using the buttons below."
@@ -323,9 +324,13 @@ async def send_restart_notification():
                 message_content = None
 
                 if notify_time == 900 and not notification_sent[notify_time]:
-                    role_id = os.getenv("RESTART_NOTIFICATION_ROLE_ID")
-                    logging.info("Sent ping message")
-                    message_content = f"<@&{role_id}>" if role_id else ""
+                    player_count = await fetch_player_count()
+                    logging.info(f"Player count at {notify_message} mark: {player_count}")
+                    if player_count > 0:
+                        role_id = os.getenv("RESTART_NOTIFICATION_ROLE_ID")
+                        message_content = f"<@&{role_id}> " if role_id else ""
+                        logging.info("Sent ping message with player count check")
+                    notification_sent[notify_time] = True
 
                 if last_notification_message and notify_time != 900:
                     await last_notification_message.edit(content=message_content, embed=embed, view=RestartControlView(timeout=180))
