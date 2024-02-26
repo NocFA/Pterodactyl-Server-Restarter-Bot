@@ -87,10 +87,15 @@ Do note, with the latter option, if you exit the shell, the bot will also exit, 
 ## Default .env requirements:
 
 ```
-DISCORD_TOKEN= # Your Discord bot token
-PTERODACTYL_API_KEY= # Your Pterodactyl account API key (NOT APPLICATION API)
-PTERODACTYL_PANEL_URL= # Your Pterodactyl's public URL (for API)
-PTERODACTYL_SERVER_ID= # Your Pterodactyl server ID, grab from admin area
-NOTIFICATION_CHANNEL_ID= # Channel you want to notify users in about the restart
-RESTART_NOTIFICATION_ROLE_ID= # Role to ping for the notification
+DISCORD_TOKEN="" # Your Discord bot token
+PTERODACTYL_API_KEY="" # Your Pterodactyl account API key (NOT APPLICATION API)
+PTERODACTYL_PANEL_URL="" # Your Pterodactyl's public URL (for API)
+PTERODACTYL_SERVER_ID="" # Your Pterodactyl server ID, grab from admin area
+NOTIFICATION_CHANNEL_ID="" # Channel you want to notify users in about the restart
+RESTART_NOTIFICATION_ROLE_ID="" # Role to ping for the notification
+ADMIN_ROLE_ID="" (Optional) # Role for admin RCON commands (broadcast, restart, etc)
+SERVER_IP="" # (Optional) Your server's IP address.
+RCON_PORT="" # (Optional) Your RCON port, this is separate from main port, default is 25575.
+RCON_PASSWORD="" # (Optional) If using RCON, set the server admin password here, yes, you have to have one/.
+RESTART_INTERVAL="" # This is what actually defines how often the server should auto-restart, use format of `hours=6`, `minutes=15` etc.
 ```

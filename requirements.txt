@@ -2,3 +2,4 @@ setuptools
 nextcord
 aiohttp
 python-dotenv
+asyncio
