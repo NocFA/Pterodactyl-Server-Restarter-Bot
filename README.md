@@ -15,9 +15,12 @@ Upon a user selecting one of these options, it's logged to a file called `bot_ac
 
 If left untouched, it will just restart the server.
 
-![alt text](https://noc.wf/PPpCpoxkh0-XjkUCVdTz8.png?no_redirect=true)
+![Sample Screenshot](https://noc.wf/PPpCpoxkh0-XjkUCVdTz8.png?no_redirect=true)
 
 Has the ability of using slash commands to run `/postpone` early to extend it by 5 or 15 minutes, just in case you have 30 mnutes remaining and want a bit more time, ahead of time.
+
+Now, with the latest 0.2, has the ability to use/issue RCON commands to a Palworld server, such as shutdown with a timer, show players, see server details, etc.
+![All Commands Image](https://noc.wf/IGMeV5UW2D-srQLPa7yQJ.png?no_redirect=true)
 
 # How to use?
 
@@ -25,6 +28,14 @@ These instructions aren't final, nor will work on everyone's system, things will
 This is what works on mine, so, please take it with a pinch of salt.
 
 In most cases, you're best to run any python bot with `venv` for a virtual environment, especially if you've used python elsewhere.
+
+# Commands
+- /broadcast [Message] # This broadcasts a message to the whole server. (admin-only)
+- /info # This gets the palworld server version & server name
+- /save # Saves the current game state, this is also issued on shutdowns.
+- /postpone [optional: extended] # this by default postpones the restart by 15 minutes, if extended is choosen, it'll be 30 minutes.
+- /showplayers [optiona: include_steamids:True/False] # This gets current list of players on the server, optionally can include their steam UUID for easy kicking, which you can implement, I haven't.
+- /shutdown [seconds] [message_text:] # Shuts down the server peacefully, requires time until shutdown & message.
 
 ## Requirments
 - Requires Python 3.9 or above.
