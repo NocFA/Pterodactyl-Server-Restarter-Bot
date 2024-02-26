@@ -34,7 +34,7 @@ In most cases, you're best to run any python bot with `venv` for a virtual envir
 - `/info` # This gets the palworld server version & server name
 - `/save` # Saves the current game state, this is also issued on shutdowns.
 - `/postpone [optional: extended]` # this by default postpones the restart by 15 minutes, if extended is choosen, it'll be 30 minutes.
-- `/showplayers [optiona: include_steamids:True/False]` # This gets current list of players on the server, optionally can include their steam UUID for easy kicking, which you can implement, I haven't.
+- `/showplayers [optional: include_steamids:True/False]` # This gets current list of players on the server, optionally can include their steam UUID for easy kicking, which you can implement, I haven't.
 - `/shutdown [seconds] [message_text:]` # Shuts down the server peacefully, requires time until shutdown & message.
 
 ## Requirments
