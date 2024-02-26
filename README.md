@@ -97,4 +97,5 @@ ADMIN_ROLE_ID="" (Optional) # Role for admin RCON commands (broadcast, restart, 
 SERVER_IP="" # (Optional) Your server's IP address.
 RCON_PORT="" # (Optional) Your RCON port, this is separate from main port, default is 25575.
 RCON_PASSWORD="" # (Optional) If using RCON, set the server admin password here, yes, you have to have one/.
+RESTART_INTERVAL="" # This is what actually defines how often the server should auto-restart, use format of `hours=6`, `minutes=15` etc.
 ```

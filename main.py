@@ -7,7 +7,6 @@ import logging
 from dotenv import load_dotenv
 import aiohttp
 import asyncio
-import socket
 import struct
 import time
 from datetime import datetime, timedelta
@@ -17,14 +16,18 @@ intents = nextcord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="/", intents=intents)
 logging.basicConfig(level=logging.INFO, filename='bot_activity.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+# Hacky way to convert str to timedelta, defaults to 12 hours if none given
+restart_interval_str = os.getenv('RESTART_INTERVAL', 'hours=12')
+key, value = restart_interval_str.split('=')
+value = int(value)
 
-restart_interval = timedelta(hours=6)
+restart_interval = timedelta(**{key: value})
 bot_startup_time = datetime.now()
 next_restart_time = bot_startup_time + restart_interval
 restart_initiated = False
 
 
-### RCON Initalize, yes, I'm sending raw rcon via asyncio because RCON libraries are horrid
+# RCON Initalize, yes, I'm sending raw rcon via asyncio because RCON libraries are horrid
 async def rcon_send_command(command):
     SERVER_IP = os.getenv('SERVER_IP')
     RCON_PORT = os.getenv('RCON_PORT')
@@ -76,7 +79,7 @@ async def save(interaction: Interaction):
     else:
         await interaction.response.send_message(f"Failed to save game server state: {save_response}", ephemeral=True)
 
-### This was built with my server in mind, obviously, this may not parse your name/version correctly.
+# This was built with my server in mind, obviously, this may not parse your name/version correctly.
 @bot.slash_command(name="info", description="Displays information about the game server.")
 async def info(interaction: Interaction):
     info_response = await rcon_send_command("info")
@@ -115,8 +118,7 @@ async def broadcast(interaction: Interaction, message: str = SlashOption(descrip
         logging.info(f"Broadcast sent: [{message}] by {interaction.user.name}.")
         await interaction.response.send_message(f"Broadcast message sent successfully: \"{message}\"", ephemeral=True)
     
-### Untested commands, proceed with caution
-    
+# Untested commands, proceed with caution
 @bot.slash_command(name="shutdown", description="Initiates a server shutdown with a timer and a custom message, untested.")
 async def shutdown(interaction: Interaction, seconds: int = SlashOption(description="Delay in seconds before the server shuts down"),
                    message_text: str = SlashOption(description="Custom shutdown message")):
@@ -168,15 +170,14 @@ async def showplayers(interaction: Interaction, include_steamids: bool = SlashOp
 
         await interaction.response.send_message(f"### Players:\n{message}", ephemeral=True)
 
-### Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
-#@bot.slash_command(name="rcon", description="Execute an RCON command on the server.")
-#async def rcon_command(interaction: nextcord.Interaction, command: str):
-    #await interaction.response.defer(ephemeral=True)
-    #response = await rcon_send_command(command)
-    #await interaction.followup.send(f"RCON response: ```{response}```", ephemeral=True)
+# Raw RCON command, uncomment if you want raw rcon access, although, not sure why you would.
+# @bot.slash_command(name="rcon", description="Execute an RCON command on the server.")
+# async def rcon_command(interaction: nextcord.Interaction, command: str):
+    # await interaction.response.defer(ephemeral=True)
+    # response = await rcon_send_command(command)
+    # await interaction.followup.send(f"RCON response: ```{response}```", ephemeral=True)
     
-### Fetch playercount with RCON for Discord RP
-
+# Fetch playercount with RCON for Discord RP
 async def fetch_player_count():
     player_list_response = await rcon_send_command("ShowPlayers")
     player_list_lines = player_list_response.strip().split('\n')[1:]
@@ -240,11 +241,6 @@ class RestartControlView(View):
         for item in self.children:
             if isinstance(item, Button):
                 item.disabled = True
-
-    async def disable_buttons(self):
-        for item in self.children:
-            if isinstance(item, Button):
-                item.disabled = True
         self.stop()
 
     @nextcord.ui.button(label="Restart Now", style=ButtonStyle.red)
@@ -262,11 +258,8 @@ class RestartControlView(View):
     async def postpone_short(self, button: Button, interaction: Interaction):
         global next_restart_time, notification_sent, last_notification_message
         next_restart_time += timedelta(minutes=1)
-        channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
-        channel = bot.get_channel(channel_id)
         await interaction.response.edit_message(content="⏸️ Server restart postponed by 15 minutes!", view=self)
         update_presence.restart()
-        await self.disable_buttons()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
         logging.info(f"Restart postponed for 15 minutes by {interaction.user.name}.")
@@ -275,11 +268,8 @@ class RestartControlView(View):
     async def postpone_long(self, button: Button, interaction: Interaction):
         global next_restart_time, notification_sent, last_notification_message
         next_restart_time += timedelta(minutes=30)
-        channel_id = int(os.getenv("NOTIFICATION_CHANNEL_ID"))
-        channel = bot.get_channel(channel_id)
         await interaction.response.edit_message(content="⏸️ Server restart postponed by 30 minutes!", view=self)
         update_presence.restart()
-        await self.disable_buttons()
         last_notification_message = None
         notification_sent = {900: False, 300: False, 120: False}
         logging.info(f"Restart postponed for 30 minutes by {interaction.user.name}.")
