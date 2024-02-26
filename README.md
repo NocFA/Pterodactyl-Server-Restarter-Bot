@@ -30,12 +30,12 @@ This is what works on mine, so, please take it with a pinch of salt.
 In most cases, you're best to run any python bot with `venv` for a virtual environment, especially if you've used python elsewhere.
 
 # Commands
-- /broadcast [Message] # This broadcasts a message to the whole server. (admin-only)
-- /info # This gets the palworld server version & server name
-- /save # Saves the current game state, this is also issued on shutdowns.
-- /postpone [optional: extended] # this by default postpones the restart by 15 minutes, if extended is choosen, it'll be 30 minutes.
-- /showplayers [optiona: include_steamids:True/False] # This gets current list of players on the server, optionally can include their steam UUID for easy kicking, which you can implement, I haven't.
-- /shutdown [seconds] [message_text:] # Shuts down the server peacefully, requires time until shutdown & message.
+- `/broadcast` [Message] # This broadcasts a message to the whole server. (admin-only)
+- `/info` # This gets the palworld server version & server name
+- `/save` # Saves the current game state, this is also issued on shutdowns.
+- `/postpone [optional: extended]` # this by default postpones the restart by 15 minutes, if extended is choosen, it'll be 30 minutes.
+- `/showplayers [optiona: include_steamids:True/False]` # This gets current list of players on the server, optionally can include their steam UUID for easy kicking, which you can implement, I haven't.
+- `/shutdown [seconds] [message_text:]` # Shuts down the server peacefully, requires time until shutdown & message.
 
 ## Requirments
 - Requires Python 3.9 or above.
