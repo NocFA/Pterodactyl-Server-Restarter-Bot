@@ -20,7 +20,7 @@ If left untouched, it will just restart the server.
 Has the ability of using slash commands to run `/postpone` early to extend it by 5 or 15 minutes, just in case you have 30 mnutes remaining and want a bit more time, ahead of time.
 
 Now, with the latest 0.2, has the ability to use/issue RCON commands to a Palworld server, such as shutdown with a timer, show players, see server details, etc.
-![All Commands Image](https://noc.wf/IGMeV5UW2D-srQLPa7yQJ.png?no_redirect=true)
+![All Commands Image](https://noc.wf/3C6AXsAMzW-rJkwCrXi8b.png?no_redirect=true)
 
 # How to use?
 
